@@ -4,6 +4,10 @@ Lightweight configuration engine for node.js
 Allows you to have a common configuration file with an ability to override
 particular settings in host-specific configuratin files.
 
+## Dependencies
+
+* [node-utils](http://bitbucket.org/shivercube/node-utils)
+
 ## How it works
 For example, certain settings, like name of your application, does not depend
 on the environment (production/dev/CI), hence never changes:
