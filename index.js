@@ -1,94 +1,31 @@
-var sys = require('sys'),
-    EventEmitter = require('events').EventEmitter,
-    p = require('child_process'),
-    path = require('path');
+var path = require('path'),
+    childProcess = require('child_process'),
+    utils = require('node-utils');
 
-// You can force node-config to pick up config file different to your hostname,
-// by setting .hostname to the name of desired config file (omitting .js), i.e.
-// conf.hostname = 'my-host'; // assuming that ./conf/my-host.js exists
-exports.hostname = null; 
-
-// By default node-config is going to look for 'conf' folder in curent directory.
-// You can change that by changing the currentDirectory property
-exports.currentDirectory = process.cwd();
-
-function _addProperty(property_name, conf) {
-    Object.defineProperty(
-        exports,
-        property_name,
-        {
-            get: function() {
-                return conf[property_name];
-            },
-            enumerable: true,
-            configurable: true
-        }
-    );
-}
-
-function _processProperties(collection) {
-    for(property in collection) {
-        if(collection.hasOwnProperty(property)) {
-            _addProperty(property, collection);
-        }
-    }
-}
-
-function _initInternal(hostname, callback) {
-    var conf = null,
-       conf_path = null;
-
-    // First of all, retrieve common properties
-    var conf_path = path.join(exports.currentDirectory,
-                              'conf', 
-                              'common.js');
+function init(dir, hostname, callback) {
     try {
-        conf = require(conf_path).conf;
-        _processProperties(conf);
+        var conf = require(path.join(dir, 'common')).conf;
+
+        try {
+            callback(null, utils.merge(conf,
+                require(path.join(dir, hostname)).conf));
+
+        } catch(err) {
+            callback(null, conf);
+        }
+
     } catch(err) {
-        sys.log('Unable to locate file ' + conf_path);
         callback(err);
-        return;
     }
-
-    // Then load host-specific ones
-    // This is optional since there might be no host config.
-    try {
-        var conf_path = path.join(exports.currentDirectory,
-                                  'conf',
-                                  hostname + '.js')
-        conf = require(conf_path).conf;
-        _processProperties(conf);
-    } catch(err) {}
-
-    callback(null);
 }
 
-exports.initConfig = function(callback) {
+exports.init = function(dir, hostname, callback) {
+    if (arguments.length == 2) { // If hostname == callback
+        var hostnameProcess = childProcess.spawn('hostname');
+        hostnameProcess.stdout.on('data', function(result) {
+            init(dir, utils.trim(result), hostname);
+        });
+        hostnameProcess.stderr.on('data', hostname);
 
-    // If hostname is set by user, do not invoke the 'hostname' command line tool.
-    // However still behave in async fashion.
-    if(exports.hostname != null) {
-        var eventEmitter = new EventEmitter();
-        eventEmitter.on('init',
-            function() {
-                _initInternal(exports.hostname, callback);
-            }
-        );
-        eventEmitter.emit('init');
-
-        return;
-    }
-
-    // No hostname predefined, obtain hostname andproceed to initialisation.
-    var hostname = p.spawn('hostname');
-
-    hostname.stdout.on('data', function(data) {
-        var _hostname = String(data).replace('\n', '');
-        _initInternal(_hostname, callback);        
-    });
-
-    hostname.stderr.on('data', function(data) {
-        callback(data);
-    });
-}
+    } else init(dir, hostname, callback);
+};
