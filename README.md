@@ -1,8 +1,8 @@
 ## Description
 Lightweight configuration engine for node.js
 
-Allows you to have a common configuration file with an ability to override particular
-settings in host-specific configuratin files.
+Allows you to have a common configuration file with an ability to override
+particular settings in host-specific configuratin files.
 
 ## How it works
 For example, certain settings, like name of your application, does not depend
@@ -41,31 +41,24 @@ appropriate values from host-specific config file.
 
 Loading of configuration is as simple as this:
 
-    // Presuming that node-config sits under ./external folder in the project
-    require.paths.unshift('./external');
-
     var conf = require('node-config'),
         sys = require('sys');
 
-    conf.initConfig(
-        function(err) {
-            if(err) {
-                sys.log('Unable to init the config: ' + err); 
-                return;
-            }
+    function main(opts) {
+        console.log(opts.dbConnection);
+    }
 
-            // Config loaded, can do those things now:
-
-            console.log(conf.db_connection);
-        }
-    );
+    conf.init(__dirname + '/conf', function(err, opts) {
+        err ?
+            console.log('Could not load config: ' + err) :
+            main(opts);
+    });
 
 ## Setup
 
-You need to have a `conf` directory in your project root folder (where your
-main .js file sits), and it has to contain`common.js` file with following
-format:
-    
+You need to have a directory which contains a `common.js` file with the
+following format:
+
     exports.conf = {
         name: 'value',
         // ...

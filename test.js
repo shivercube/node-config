@@ -1,28 +1,21 @@
-require.paths.unshift('.');
-
-var sys = require('sys'),
+var assert = require('assert'),
     conf = require('./index');
 
-function assert(value, message) {
-    if(!value) {
-        message = 'FAIL: ' + message;
-    } else {
-        message = 'PASS: ' + message;
-    }
+function test(err, opts, b, n) {
+    if (err) {
+        console.log(err);
 
-    console.log(message);
+    } else {
+        assert.equal(opts.a, 'a');
+        assert.equal(opts.b, b);
+        console.log('Finished test ' + n)
+    }
 }
 
-conf.hostname = 'hostname';
+conf.init(__dirname + '/conf', 'hostname', function(err, opts) {
+    test(err, opts, 'redefined b', 1);
 
-conf.initConfig(
-    function(err) {
-        if(err) {
-            console.log(err);
-            return;
-        }
-
-        assert(conf.a == 'a', 'conf.a == a');
-        assert(conf.b == 'redefined b', 'conf.b == redefined b');
-    }
-);
+    conf.init(__dirname + '/conf', function(err, opts) {
+        test(err, opts, 'b', 2);
+    });
+});
