@@ -23,9 +23,9 @@ exports.init = function(dir, hostname, callback) {
     if (arguments.length == 2) { // If hostname == callback
         var hostnameProcess = childProcess.spawn('hostname');
         hostnameProcess.stdout.on('data', function(result) {
-            init(dir, utils.trim(result), hostname);
+            utils.async(init, dir, utils.trim(result), hostname);
         });
         hostnameProcess.stderr.on('data', hostname);
 
-    } else init(dir, hostname, callback);
+    } else utils.async(init, dir, hostname, callback);
 };
