@@ -1,22 +1,26 @@
 var path = require('path'),
     childProcess = require('child_process'),
+    util = require('util'),
     utils = require('node-utils');
 
 function init(dir, hostname, callback) {
+    var conf;
     try {
-        var conf = require(path.join(dir, 'common')).conf;
-
-        try {
-            callback(null, utils.merge(conf,
-                require(path.join(dir, hostname)).conf));
-
-        } catch(err) {
-            callback(null, conf);
-        }
-
+        conf = require(path.join(dir, 'common')).conf;
+        
     } catch(err) {
         callback(err);
+        return;
     }
+    
+    try {
+        conf = utils.merge(conf, require(path.join(dir, hostname)).conf);
+        
+    } catch (err) {
+        util.log('Could not find config file: ' + hostname);
+    }
+    
+    callback(null, conf);
 }
 
 exports.init = function(dir, hostname, callback) {
